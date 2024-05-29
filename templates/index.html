@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FreeCell Game</title>
+</head>
+<body>
+    <h1>FreeCell Game</h1>
+    <a href="{{ url_for('start_game') }}">Start New Game</a>
+    <div>
+        <h2>Tableau</h2>
+        {% for index, pile in my_dict %}
+            <div>
+                <h3>Pile {{ index + 1 }}</h3>
+                {% for card in pile %}
+                    <p>{{ card }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+    <!-- Add more sections for free cells and foundations similar to tableau -->
+    <form action="{{ url_for('move_card') }}" method="post">
+        <input type="text" name="from_index" placeholder="From Index">
+        <input type="text" name="to_index" placeholder="To Index">
+        <select name="move_type">
+            <option value="tableau">Tableau</option>
+            <option value="free_cell">Free Cell</option>
+            <option value="foundation">Foundation</option>
+        </select>
+        <button type="submit">Move Card</button>
+    </form>
+</body>
+</html>
