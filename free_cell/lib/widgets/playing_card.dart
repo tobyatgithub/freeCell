@@ -136,6 +136,8 @@ class EmptyCardSlot extends StatelessWidget {
   final String target;
   final int targetIndex;
   final Function(CardDragData)? onAccept;
+  final game_card.Card? targetCard;
+  final Widget? child;
 
   const EmptyCardSlot({
     super.key,
@@ -146,6 +148,8 @@ class EmptyCardSlot extends StatelessWidget {
     required this.target,
     required this.targetIndex,
     this.onAccept,
+    this.targetCard,
+    this.child,
   });
 
   @override
@@ -153,12 +157,26 @@ class EmptyCardSlot extends StatelessWidget {
     return DragTarget<CardDragData>(
       onWillAccept: (data) {
         if (data == null) return false;
-        // 具体的接受逻辑将在 GameBoard 中实现
-        return true;
+
+        if (targetCard == null) return true;
+
+        if (target == 'tableau') {
+          return data.card.canStackOnTableau(targetCard!);
+        }
+
+        if (target == 'foundation') {
+          return data.card.canStackOnFoundation(targetCard);
+        }
+
+        if (target == 'freecell') {
+          return targetCard == null;
+        }
+
+        return false;
       },
       onAccept: onAccept,
       builder: (context, candidateData, rejectedData) {
-        return Container(
+        return child ?? Container(
           width: width ?? 70.w,
           height: height ?? 100.h,
           decoration: BoxDecoration(

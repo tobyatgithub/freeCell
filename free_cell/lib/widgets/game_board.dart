@@ -39,7 +39,6 @@ class GameBoard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gameState = ref.watch(gameProvider);
-    final gameNotifier = ref.read(gameProvider.notifier);
 
     return Column(
       children: [
@@ -57,13 +56,16 @@ class GameBoard extends ConsumerWidget {
                   return Padding(
                     padding: EdgeInsets.only(right: 4.w),
                     child: card != null
-                        ? PlayingCard(
-                            card: card,
-                            source: 'freecell',
-                            sourceIndex: index,
-                            onTap: () {
-                              // TODO: Implement free cell tap
-                            },
+                        ? EmptyCardSlot(
+                            target: 'freecell',
+                            targetIndex: index,
+                            targetCard: card,
+                            onAccept: (data) => _handleDragAccept(context, ref, data, 'freecell', index),
+                            child: PlayingCard(
+                              card: card,
+                              source: 'freecell',
+                              sourceIndex: index,
+                            ),
                           )
                         : EmptyCardSlot(
                             target: 'freecell',
@@ -87,11 +89,17 @@ class GameBoard extends ConsumerWidget {
                             targetIndex: index,
                             onAccept: (data) => _handleDragAccept(context, ref, data, 'foundation', index),
                           )
-                        : PlayingCard(
-                            card: pile.last,
-                            source: 'foundation',
-                            sourceIndex: index,
-                            isDraggable: false,
+                        : EmptyCardSlot(
+                            target: 'foundation',
+                            targetIndex: index,
+                            targetCard: pile.last,
+                            onAccept: (data) => _handleDragAccept(context, ref, data, 'foundation', index),
+                            child: PlayingCard(
+                              card: pile.last,
+                              source: 'foundation',
+                              sourceIndex: index,
+                              isDraggable: false,
+                            ),
                           ),
                   );
                 }),
@@ -121,19 +129,31 @@ class GameBoard extends ConsumerWidget {
                         Expanded(
                           child: Stack(
                             children: List.generate(column.length, (cardIndex) {
+                              final card = column[cardIndex];
+                              final isLastCard = cardIndex == column.length - 1;
                               return Positioned(
                                 top: (cardIndex * 30).h,
                                 left: 0,
                                 right: 0,
-                                child: PlayingCard(
-                                  card: column[cardIndex],
-                                  source: 'tableau',
-                                  sourceIndex: columnIndex,
-                                  isDraggable: cardIndex == column.length - 1,
-                                  onTap: () {
-                                    // TODO: Implement tableau card tap
-                                  },
-                                ),
+                                child: isLastCard
+                                    ? EmptyCardSlot(
+                                        target: 'tableau',
+                                        targetIndex: columnIndex,
+                                        targetCard: card,
+                                        onAccept: (data) => _handleDragAccept(context, ref, data, 'tableau', columnIndex),
+                                        child: PlayingCard(
+                                          card: card,
+                                          source: 'tableau',
+                                          sourceIndex: columnIndex,
+                                          isDraggable: true,
+                                        ),
+                                      )
+                                    : PlayingCard(
+                                        card: card,
+                                        source: 'tableau',
+                                        sourceIndex: columnIndex,
+                                        isDraggable: false,
+                                      ),
                               );
                             }),
                           ),

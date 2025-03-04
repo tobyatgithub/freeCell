@@ -33,6 +33,10 @@ class Card {
   bool get isRed => suit == Suit.hearts || suit == Suit.diamonds;
   bool get isBlack => suit == Suit.clubs || suit == Suit.spades;
 
+  int get rankValue {
+    return Rank.values.indexOf(rank) + 1;
+  }
+
   String get suitSymbol {
     switch (suit) {
       case Suit.hearts:
@@ -57,7 +61,7 @@ class Card {
       case Rank.king:
         return 'K';
       default:
-        return (Rank.values.indexOf(rank) + 1).toString();
+        return rankValue.toString();
     }
   }
 
@@ -66,12 +70,12 @@ class Card {
 
   bool canStackOnTableau(Card other) {
     if (isRed == other.isRed) return false;
-    return Rank.values.indexOf(rank) == Rank.values.indexOf(other.rank) - 1;
+    return rankValue == other.rankValue - 1;
   }
 
   bool canStackOnFoundation(Card? other) {
     if (other == null) return rank == Rank.ace;
     return suit == other.suit && 
-           Rank.values.indexOf(rank) == Rank.values.indexOf(other.rank) + 1;
+           rankValue == other.rankValue + 1;
   }
 } 
