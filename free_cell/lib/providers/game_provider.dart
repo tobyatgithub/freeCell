@@ -83,6 +83,29 @@ class GameNotifier extends StateNotifier<GameState> {
     return column.isEmpty || card.canStackOnTableau(column.last);
   }
 
+  // 计算可移动的最大牌数
+  int getMaxMovableCards() {
+    int emptyFreeCells = state.freeCells.where((cell) => cell == null).length;
+    int emptyTableauColumns = state.tableau.where((column) => column.isEmpty).length;
+    return (emptyFreeCells + 1) * (1 << emptyTableauColumns); // 1 << n 等于 2^n
+  }
+
+  // 验证一组牌是否可以连续移动
+  bool canMoveCards(List<Card> cards) {
+    if (cards.isEmpty) return false;
+    
+    // 检查牌是否按顺序排列
+    for (int i = 0; i < cards.length - 1; i++) {
+      if (!cards[i + 1].canStackOnTableau(cards[i])) {
+        return false;
+      }
+    }
+
+    // 检查牌数是否超过最大可移动数量
+    return cards.length <= getMaxMovableCards();
+  }
+
+  // 修改移动卡牌的方法以支持多张牌移动
   void moveCard({
     required int fromTableau,
     required int toTableau,
@@ -94,7 +117,11 @@ class GameNotifier extends StateNotifier<GameState> {
     final startIndex = cardIndex == -1 ? sourceColumn.length - 1 : cardIndex;
     final cardsToMove = sourceColumn.sublist(startIndex);
     
-    if (canMoveToTableau(cardsToMove.first, toTableau)) {
+    // 验证移动是否合法
+    if (!canMoveCards(cardsToMove)) return;
+    
+    if (state.tableau[toTableau].isEmpty || 
+        cardsToMove.first.canStackOnTableau(state.tableau[toTableau].last)) {
       final newTableau = List<List<Card>>.from(state.tableau);
       newTableau[fromTableau] = sourceColumn.sublist(0, startIndex);
       newTableau[toTableau] = [...state.tableau[toTableau], ...cardsToMove];

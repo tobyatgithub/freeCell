@@ -6,11 +6,13 @@ class CardDragData {
   final game_card.Card card;
   final String source;
   final int sourceIndex;
+  final List<game_card.Card> additionalCards;
 
   const CardDragData({
     required this.card,
     required this.source,
     required this.sourceIndex,
+    this.additionalCards = const [],
   });
 }
 
@@ -23,6 +25,8 @@ class PlayingCard extends StatelessWidget {
   final String source;
   final int sourceIndex;
   final bool isDraggable;
+  final List<game_card.Card> additionalCards;
+  final Function(bool, CardDragData?)? onDragComplete;
 
   const PlayingCard({
     super.key,
@@ -34,6 +38,8 @@ class PlayingCard extends StatelessWidget {
     required this.source,
     required this.sourceIndex,
     this.isDraggable = true,
+    this.additionalCards = const [],
+    this.onDragComplete,
   });
 
   Widget _buildCard(BuildContext context) {
@@ -98,6 +104,48 @@ class PlayingCard extends StatelessWidget {
     );
   }
 
+  Widget _buildDragFeedback(BuildContext context) {
+    print('Building drag feedback for ${card.toString()} with additional cards: ${additionalCards.map((c) => c.toString()).join(", ")}');
+    
+    if (additionalCards.isEmpty) {
+      return Material(
+        color: Colors.transparent,
+        child: _buildCard(context),
+      );
+    }
+    
+    final totalHeight = 100.h + (additionalCards.length * 30.h);
+    
+    return Material(
+      color: Colors.transparent,
+      child: SizedBox(
+        width: 70.w,
+        height: totalHeight,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            _buildCard(context),
+            ...additionalCards.asMap().entries.map((entry) {
+              final index = entry.key;
+              final card = entry.value;
+              return Positioned(
+                top: ((index + 1) * 30).h,
+                left: 0,
+                right: 0,
+                child: PlayingCard(
+                  card: card,
+                  source: source,
+                  sourceIndex: sourceIndex,
+                  isDraggable: false,
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cardWidget = _buildCard(context);
@@ -109,20 +157,53 @@ class PlayingCard extends StatelessWidget {
       );
     }
 
-    return Draggable<CardDragData>(
-      data: CardDragData(
-        card: card,
-        source: source,
-        sourceIndex: sourceIndex,
-      ),
-      feedback: cardWidget,
-      childWhenDragging: Opacity(
-        opacity: 0.5,
-        child: cardWidget,
-      ),
-      child: GestureDetector(
-        onTap: onTap,
-        child: cardWidget,
+    print('Building draggable card: ${card.toString()}');
+    print('Additional cards: ${additionalCards.map((c) => c.toString()).join(", ")}');
+
+    final dragData = CardDragData(
+      card: card,
+      source: source,
+      sourceIndex: sourceIndex,
+      additionalCards: additionalCards,
+    );
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Draggable<CardDragData>(
+        data: dragData,
+        feedback: _buildDragFeedback(context),
+        childWhenDragging: Opacity(
+          opacity: 0.5,
+          child: cardWidget,
+        ),
+        onDragStarted: () {
+          print('Drag started for card: ${card.toString()}');
+          print('With additional cards: ${additionalCards.map((c) => c.toString()).join(", ")}');
+        },
+        onDragEnd: (details) {
+          print('Drag ended for card: ${card.toString()}, wasAccepted: ${details.wasAccepted}');
+        },
+        onDragCompleted: () {
+          print('Drag completed for card: ${card.toString()}');
+          if (onDragComplete != null) {
+            onDragComplete!(true, dragData);
+          }
+        },
+        onDraggableCanceled: (_, __) {
+          print('Drag canceled for card: ${card.toString()}');
+          if (onDragComplete != null) {
+            onDragComplete!(false, dragData);
+          }
+        },
+        child: GestureDetector(
+          onTap: () {
+            print('Card tapped: ${card.toString()}');
+            if (onTap != null) {
+              onTap!();
+            }
+          },
+          child: cardWidget,
+        ),
       ),
     );
   }
@@ -136,6 +217,7 @@ class EmptyCardSlot extends StatelessWidget {
   final String target;
   final int targetIndex;
   final Function(CardDragData)? onAccept;
+  final bool Function(CardDragData?)? onWillAccept;
   final game_card.Card? targetCard;
   final Widget? child;
 
@@ -148,6 +230,7 @@ class EmptyCardSlot extends StatelessWidget {
     required this.target,
     required this.targetIndex,
     this.onAccept,
+    this.onWillAccept,
     this.targetCard,
     this.child,
   });
@@ -155,7 +238,7 @@ class EmptyCardSlot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DragTarget<CardDragData>(
-      onWillAccept: (data) {
+      onWillAccept: onWillAccept ?? (data) {
         if (data == null) return false;
 
         if (targetCard == null) return true;
