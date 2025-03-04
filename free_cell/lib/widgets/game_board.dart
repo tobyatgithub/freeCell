@@ -8,6 +8,34 @@ import 'playing_card.dart';
 class GameBoard extends ConsumerWidget {
   const GameBoard({super.key});
 
+  void _handleDragAccept(BuildContext context, WidgetRef ref, CardDragData data, String target, int targetIndex) {
+    final gameNotifier = ref.read(gameProvider.notifier);
+
+    // 处理从 tableau 到 tableau 的移动
+    if (data.source == 'tableau' && target == 'tableau') {
+      gameNotifier.moveCard(
+        fromTableau: data.sourceIndex,
+        toTableau: targetIndex,
+      );
+    }
+    // 处理从 tableau 到 free cell 的移动
+    else if (data.source == 'tableau' && target == 'freecell') {
+      gameNotifier.moveToFreeCell(data.sourceIndex);
+    }
+    // 处理从 free cell 到 tableau 的移动
+    else if (data.source == 'freecell' && target == 'tableau') {
+      gameNotifier.moveFromFreeCell(data.sourceIndex, targetIndex);
+    }
+    // 处理到 foundation 的移动
+    else if (target == 'foundation') {
+      if (data.source == 'tableau') {
+        gameNotifier.moveToFoundation(data.sourceIndex);
+      } else if (data.source == 'freecell') {
+        gameNotifier.moveFreeCellToFoundation(data.sourceIndex, targetIndex);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gameState = ref.watch(gameProvider);
@@ -31,14 +59,16 @@ class GameBoard extends ConsumerWidget {
                     child: card != null
                         ? PlayingCard(
                             card: card,
+                            source: 'freecell',
+                            sourceIndex: index,
                             onTap: () {
                               // TODO: Implement free cell tap
                             },
                           )
                         : EmptyCardSlot(
-                            onTap: () {
-                              // TODO: Implement empty free cell tap
-                            },
+                            target: 'freecell',
+                            targetIndex: index,
+                            onAccept: (data) => _handleDragAccept(context, ref, data, 'freecell', index),
                           ),
                   );
                 }),
@@ -53,15 +83,15 @@ class GameBoard extends ConsumerWidget {
                     child: pile.isEmpty
                         ? EmptyCardSlot(
                             color: Colors.green.withOpacity(0.1),
-                            onTap: () {
-                              // TODO: Implement empty foundation tap
-                            },
+                            target: 'foundation',
+                            targetIndex: index,
+                            onAccept: (data) => _handleDragAccept(context, ref, data, 'foundation', index),
                           )
                         : PlayingCard(
                             card: pile.last,
-                            onTap: () {
-                              // TODO: Implement foundation pile tap
-                            },
+                            source: 'foundation',
+                            sourceIndex: index,
+                            isDraggable: false,
                           ),
                   );
                 }),
@@ -83,9 +113,9 @@ class GameBoard extends ConsumerWidget {
                     children: [
                       if (column.isEmpty)
                         EmptyCardSlot(
-                          onTap: () {
-                            // TODO: Implement empty tableau column tap
-                          },
+                          target: 'tableau',
+                          targetIndex: columnIndex,
+                          onAccept: (data) => _handleDragAccept(context, ref, data, 'tableau', columnIndex),
                         )
                       else
                         Expanded(
@@ -97,6 +127,9 @@ class GameBoard extends ConsumerWidget {
                                 right: 0,
                                 child: PlayingCard(
                                   card: column[cardIndex],
+                                  source: 'tableau',
+                                  sourceIndex: columnIndex,
+                                  isDraggable: cardIndex == column.length - 1,
                                   onTap: () {
                                     // TODO: Implement tableau card tap
                                   },
