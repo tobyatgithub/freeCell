@@ -105,8 +105,6 @@ class PlayingCard extends StatelessWidget {
   }
 
   Widget _buildDragFeedback(BuildContext context) {
-    print('Building drag feedback for ${card.toString()} with additional cards: ${additionalCards.map((c) => c.toString()).join(", ")}');
-    
     if (additionalCards.isEmpty) {
       return Material(
         color: Colors.transparent,
@@ -157,9 +155,6 @@ class PlayingCard extends StatelessWidget {
       );
     }
 
-    print('Building draggable card: ${card.toString()}');
-    print('Additional cards: ${additionalCards.map((c) => c.toString()).join(", ")}');
-
     final dragData = CardDragData(
       card: card,
       source: source,
@@ -176,32 +171,18 @@ class PlayingCard extends StatelessWidget {
           opacity: 0.5,
           child: cardWidget,
         ),
-        onDragStarted: () {
-          print('Drag started for card: ${card.toString()}');
-          print('With additional cards: ${additionalCards.map((c) => c.toString()).join(", ")}');
-        },
-        onDragEnd: (details) {
-          print('Drag ended for card: ${card.toString()}, wasAccepted: ${details.wasAccepted}');
-        },
         onDragCompleted: () {
-          print('Drag completed for card: ${card.toString()}');
           if (onDragComplete != null) {
             onDragComplete!(true, dragData);
           }
         },
         onDraggableCanceled: (_, __) {
-          print('Drag canceled for card: ${card.toString()}');
           if (onDragComplete != null) {
             onDragComplete!(false, dragData);
           }
         },
         child: GestureDetector(
-          onTap: () {
-            print('Card tapped: ${card.toString()}');
-            if (onTap != null) {
-              onTap!();
-            }
-          },
+          onTap: onTap,
           child: cardWidget,
         ),
       ),
