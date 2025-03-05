@@ -69,6 +69,7 @@ class Card {
   String toString() => '$rankSymbol$suitSymbol';
 
   bool canStackOnTableau(Card other) {
+    print('检查牌是否可以堆叠: $this -> ${other}, 颜色检查: ${isRed != other.isRed}, 数值检查: ${rankValue == other.rankValue - 1}');
     if (isRed == other.isRed) return false;
     return rankValue == other.rankValue - 1;
   }
